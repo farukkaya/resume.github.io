@@ -15,8 +15,7 @@
         1. Kariyer Geçmişi -> Goal: Change/Organize -> Viz: Dikey Interaktif Zaman Çizelgesi -> Interaction: Tıklanan iş rolünün detaylarını (sorumluluklar, teknolojiler) yan panelde gösterme. -> Justification: Kariyer ilerlemesini görsel olarak takip etmeyi kolaylaştırır ve bilgi yoğunluğunu yönetir. -> Method: HTML/CSS/JS.
         2. Teknik Beceriler -> Goal: Compare/Inform -> Viz: Kategori Bazlı Doughnut Chart -> Interaction: Fare ile üzerine gelindiğinde kategori detaylarını gösteren tooltip. -> Justification: Teknik yeteneklerin dağılımını (Backend, Frontend vb.) bir bakışta göstererek teknik yeterliliği hızlıca özetler. -> Library: Chart.js.
         3. Yetkinlikler -> Goal: Organize/Inform -> Viz: Kategori bazlı kartlar -> Interaction: Hover efekti. -> Justification: Okunabilliği artırır ve yetkinlikleri net bir şekilde gruplandırır. -> Method: HTML/Tailwind CSS.
-        4. Referanslar -> Goal: Inform -> Viz: Basit liste/kartlar -> Interaction: Yok. -> Justification: Referans bilgilerini düzenli ve erişilebilir bir formatta sunar. -> Method: HTML/Tailwind CSS.
-        5. Deneyim Özeti Oluşturucu (Gemini API) -> Goal: Inform/Synthesize -> Viz: Metin Bloğu -> Interaction: Buton tıklamasıyla seçili deneyim özetini LLM aracılığıyla dinamik olarak oluşturma. -> Justification: Kullanıcının her bir iş deneyimi için kişiselleştirilmiş, başvuruya özel özetler oluşturmasına olanak tanır. -> Library: Gemini API (fetch).
+        4. Referanslar -> Goal: Inform -> Viz: Basit liste/kartlar -> Interaction: Yok. -> Justification: Referans bilgilerini düzenli ve erişilebilir bir formatta sunar. İletişim bilgileri KVKK gereği gizlenmiştir. -> Method: HTML/Tailwind CSS.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -44,9 +43,19 @@
         .chart-container {
             position: relative;
             margin: auto;
-            height: 350px;
+            height: 250px; /* Base height for mobile */
             width: 100%;
-            max-width: 350px;
+            max-width: 350px; /* Max width for chart */
+        }
+        @media (min-width: 640px) { /* sm breakpoint */
+            .chart-container {
+                height: 300px;
+            }
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 350px;
+            }
         }
         .nav-link {
             transition: all 0.3s;
@@ -124,15 +133,6 @@
                 <div class="w-full md:w-2/3 bg-white p-8 rounded-2xl shadow-lg border border-gray-100 min-h-[400px]">
                     <div id="experience-details">
                         <!-- Details will be injected by JS -->
-                    </div>
-                    <button id="generateSummaryBtn" class="mt-8 bg-sky-500 text-white px-6 py-3 rounded-full hover:bg-sky-600 transition-colors shadow-md hidden">
-                        ✨ Deneyimi Özetle
-                    </button>
-                    <div id="summaryOutput" class="mt-6 p-4 bg-blue-50 rounded-lg text-gray-700 border border-blue-200 hidden">
-                        <!-- Summary will be displayed here -->
-                    </div>
-                    <div id="summaryLoading" class="mt-6 p-4 text-center text-sky-600 hidden">
-                        Özet oluşturuluyor...
                     </div>
                 </div>
             </div>
@@ -214,20 +214,19 @@
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
                     <h3 class="font-bold text-lg mt-1 text-sky-700">Ömer Balaban</h3>
                     <p class="text-gray-600">Logo Yazılım</p>
-                    <p class="text-gray-500 mt-2">T: 05304108957</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
                     <h3 class="font-bold text-lg mt-1 text-sky-700">Sefa Akdaş</h3>
                     <p class="text-gray-600">Seyir Mobil A.Ş.</p>
-                    <p class="text-gray-500 mt-2">T: 05321791669</p>
-                    <p class="text-gray-500">E: malk@sefaakdas.com</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
                     <h3 class="font-bold text-lg mt-1 text-sky-700">Ömer Ölmez</h3>
                     <p class="text-gray-600">Logo Yazılım</p>
-                    <p class="text-gray-500 mt-2">T: 05549875307</p>
                 </div>
             </div>
+            <p class="text-sm text-gray-500 mt-8">
+                KVKK kuralları gereği referans iletişim bilgileri gizlenmiştir. İhtiyaç halinde talep üzerine paylaşılabilir.
+            </p>
         </section>
 
     </main>
@@ -321,9 +320,8 @@
 
         const timelineNav = document.getElementById('timeline-nav');
         const detailsContainer = document.getElementById('experience-details');
-        const generateSummaryBtn = document.getElementById('generateSummaryBtn');
-        const summaryOutput = document.getElementById('summaryOutput');
-        const summaryLoading = document.getElementById('summaryLoading');
+        
+        // Removed generateSummaryBtn, summaryOutput, summaryLoading elements and related JS logic
         
         let currentJobId = null;
 
@@ -344,9 +342,6 @@
             if (!job) return;
 
             currentJobId = jobId; // Set current job ID
-            summaryOutput.classList.add('hidden'); // Hide previous summary
-            summaryOutput.innerHTML = ''; // Clear previous summary
-            summaryLoading.classList.add('hidden'); // Hide loading
 
             let detailsHtml = `
                 <h3 class="text-2xl font-bold text-gray-800">${job.title}</h3>
@@ -363,7 +358,6 @@
                 </div>
             `;
             detailsContainer.innerHTML = detailsHtml;
-            generateSummaryBtn.classList.remove('hidden'); // Show the button
 
             document.querySelectorAll('.timeline-item').forEach(item => {
                 item.classList.toggle('active', item.dataset.id === jobId);
@@ -374,54 +368,6 @@
             const targetItem = e.target.closest('.timeline-item');
             if (targetItem) {
                 updateDetails(targetItem.dataset.id);
-            }
-        });
-
-        generateSummaryBtn.addEventListener('click', async () => {
-            const job = experienceData.find(j => j.id === currentJobId);
-            if (!job) return;
-
-            summaryOutput.classList.add('hidden');
-            summaryLoading.classList.remove('hidden');
-
-            const prompt = `Sen bir işe alım uzmanısın. Aşağıdaki iş deneyimi bilgilerini, bir iş başvurusunda kullanılabilecek 3-4 cümlelik, vurgulu ve etkileyici bir özet haline getir. Sorumlulukları ve kullanılan teknolojileri öne çıkar.
-
-Şirket: ${job.company}
-Pozisyon: ${job.title}
-Dönem: ${job.period}
-Detaylar:
-${job.details.join('\n')}
-Kullanılan Teknolojiler:
-${job.tech.join(', ')}`;
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-            const payload = { contents: chatHistory };
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    summaryOutput.innerHTML = text;
-                    summaryOutput.classList.remove('hidden');
-                } else {
-                    summaryOutput.innerHTML = 'Özet oluşturulamadı. Lütfen tekrar deneyin.';
-                    summaryOutput.classList.remove('hidden');
-                }
-            } catch (error) {
-                summaryOutput.innerHTML = 'Bir hata oluştu: ' + error.message;
-                summaryOutput.classList.remove('hidden');
-            } finally {
-                summaryLoading.classList.add('hidden');
             }
         });
         
