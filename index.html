@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faruk Kaya - İnteraktif CV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Cool Gray & Sky Blue -->
+    <!-- Application Structure Plan: Tek sayfalı, dikey kaydırmalı bir yapı tasarlandı. Yapı, bir karşılama (hero) bölümü, interaktif bir deneyim zaman çizelgesi, görselleştirilmiş bir yetenekler bölümü, eğitim/kurslar ve referanslar bölümlerini içerir. Zaman çizelgesi, kullanıcının Faruk Bey'in kariyer geçmişine genel bir bakış atmasını ve ilgilendiği role tıklayarak detayları görmesini sağlar. Bu yapı, bir işe alım uzmanının en çok ilgilendiği bilgilere (deneyim, yetenekler, referanslar) hızlı ve etkileşimli bir şekilde ulaşmasını sağlayarak kullanıcı deneyimini en üst düzeye çıkarmak için seçildi. Statik bir CV'den çok daha ilgi çekicidir. -->
+    <!-- Visualization & Content Choices: 
+        1. Kariyer Geçmişi -> Goal: Change/Organize -> Viz: Dikey Interaktif Zaman Çizelgesi -> Interaction: Tıklanan iş rolünün detaylarını (sorumluluklar, teknolojiler) yan panelde gösterme. -> Justification: Kariyer ilerlemesini görsel olarak takip etmeyi kolaylaştırır ve bilgi yoğunluğunu yönetir. -> Method: HTML/CSS/JS.
+        2. Teknik Beceriler -> Goal: Compare/Inform -> Viz: Kategori Bazlı Doughnut Chart -> Interaction: Fare ile üzerine gelindiğinde kategori detaylarını gösteren tooltip. -> Justification: Teknik yeteneklerin dağılımını (Backend, Frontend vb.) bir bakışta göstererek teknik yeterliliği hızlıca özetler. -> Library: Chart.js.
+        3. Yetkinlikler -> Goal: Organize/Inform -> Viz: Kategori bazlı kartlar -> Interaction: Hover efekti. -> Justification: Okunabilliği artırır ve yetkinlikleri net bir şekilde gruplandırır. -> Method: HTML/Tailwind CSS.
+        4. Referanslar -> Goal: Inform -> Viz: Basit liste/kartlar -> Interaction: Yok. -> Justification: Referans bilgilerini düzenli ve erişilebilir bir formatta sunar. -> Method: HTML/Tailwind CSS.
+        5. Deneyim Özeti Oluşturucu (Gemini API) -> Goal: Inform/Synthesize -> Viz: Metin Bloğu -> Interaction: Buton tıklamasıyla seçili deneyim özetini LLM aracılığıyla dinamik olarak oluşturma. -> Justification: Kullanıcının her bir iş deneyimi için kişiselleştirilmiş, başvuruya özel özetler oluşturmasına olanak tanır. -> Library: Gemini API (fetch).
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* cool-gray-50 */
+            color: #1f2937; /* cool-gray-800 */
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background-color: #e5e7eb; /* cool-gray-200 */
+            border: 3px solid #0ea5e9; /* sky-500 */
+            top: 50%;
+            left: -0.5rem;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        .timeline-item.active::before {
+            background-color: #0ea5e9; /* sky-500 */
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 350px;
+            width: 100%;
+            max-width: 350px;
+        }
+        .nav-link {
+            transition: all 0.3s;
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #0ea5e9; /* sky-500 */
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-extrabold text-gray-800">
+                <a href="#">FK</a>
+            </div>
+            <ul class="hidden md:flex items-center space-x-8">
+                <li><a href="#hakkimda" class="nav-link text-gray-600 hover:text-sky-600 font-medium">Hakkımda</a></li>
+                <li><a href="#deneyim" class="nav-link text-gray-600 hover:text-sky-600 font-medium">Deneyim</a></li>
+                <li><a href="#yetkinlikler" class="nav-link text-gray-600 hover:text-sky-600 font-medium">Yetkinlikler</a></li>
+                <li><a href="#egitim" class="nav-link text-gray-600 hover:text-sky-600 font-medium">Eğitim</a></li>
+                <li><a href="#referanslar" class="nav-link text-gray-600 hover:text-sky-600 font-medium">Referanslar</a></li>
+            </ul>
+            <a href="mailto:farukkaya03@hotmail.com.tr" class="hidden md:block bg-sky-500 text-white px-5 py-2 rounded-full hover:bg-sky-600 transition-colors">İletişime Geç</a>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12 md:py-20">
+
+        <!-- Hero Section -->
+        <section class="text-center mb-20 md:mb-32">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-gray-800 leading-tight">Faruk Kaya</h1>
+            <p class="text-xl md:text-2xl text-sky-600 font-medium mt-4">.NET & React Developer</p>
+            <div class="mt-8 flex justify-center items-center space-x-4 text-gray-500">
+                <span>+90 (531) 854 02 20</span>
+                <span class="text-gray-300">|</span>
+                <span>farukkaya03@hotmail.com.tr</span>
+                <span class="text-300">|</span>
+                <span>Pendik, İstanbul</span>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="hakkimda" class="mb-20 md:mb-32 max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-8">Hakkımda</h2>
+            <p class="text-lg text-gray-600 leading-relaxed text-center">
+                2014 yılında yazılım sektörüne adım attığımdan bu yana, öğrenme ve gelişime olan tutkumla kendimi sürekli yeniledim. Katıldığım kurslar, seminerler ve hayata geçirdiğim kişisel projelerle sektördeki yerimi sağlamlaştırdım. Her yeni iş gününe ilk günkü heyecanımla başlayarak, farklı teknolojilerde derinlemesine deneyim kazanıyor ve profesyonel birikimimi artırıyorum. Özellikle son dönemde, geliştirmelerimde yapay zeka özelliklerini etkin olarak kullanma eğilimimle, yenilikçi çözümler sunmaya odaklanıyorum. Yaklaşık 10 yıllık yazılım geliştirme tecrübemle, şirketinizin hedeflerine ulaşmasında değerli katkılar sunmaktan memnuniyet duyarım.
+            </p>
+        </section>
+
+        <!-- Experience Section -->
+        <section id="deneyim" class="mb-20 md:mb-32">
+            <h2 class="text-3xl font-bold text-center mb-16">İş Deneyimi</h2>
+            <div class="flex flex-col md:flex-row gap-12">
+                <!-- Timeline Navigation -->
+                <div class="w-full md:w-1/3">
+                    <div id="timeline-nav" class="relative border-l-2 border-gray-200 pl-8 space-y-10">
+                        <!-- Timeline items will be injected by JS -->
+                    </div>
+                </div>
+                <!-- Experience Details -->
+                <div class="w-full md:w-2/3 bg-white p-8 rounded-2xl shadow-lg border border-gray-100 min-h-[400px]">
+                    <div id="experience-details">
+                        <!-- Details will be injected by JS -->
+                    </div>
+                    <button id="generateSummaryBtn" class="mt-8 bg-sky-500 text-white px-6 py-3 rounded-full hover:bg-sky-600 transition-colors shadow-md hidden">
+                        ✨ Deneyimi Özetle
+                    </button>
+                    <div id="summaryOutput" class="mt-6 p-4 bg-blue-50 rounded-lg text-gray-700 border border-blue-200 hidden">
+                        <!-- Summary will be displayed here -->
+                    </div>
+                    <div id="summaryLoading" class="mt-6 p-4 text-center text-sky-600 hidden">
+                        Özet oluşturuluyor...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section id="yetkinlikler" class="mb-20 md:mb-32">
+            <h2 class="text-3xl font-bold text-center mb-16">Teknik Yetkinlikler</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+                    <h3 class="font-bold text-xl mb-6 text-center text-gray-700">Teknoloji Dağılımı</h3>
+                    <div class="chart-container">
+                        <canvas id="skillsChart"></canvas>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                     <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                        <h4 class="font-bold text-lg mb-2 text-sky-700">Backend</h4>
+                        <ul class="space-y-1 text-gray-600">
+                            <li>C#</li>
+                            <li>.NET Core & MVC</li>
+                            <li>Node.js</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                        <h4 class="font-bold text-lg mb-2 text-sky-700">Frontend</h4>
+                        <ul class="space-y-1 text-gray-600">
+                            <li>React.js</li>
+                            <li>JavaScript</li>
+                            <li>HTML & CSS</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                        <h4 class="font-bold text-lg mb-2 text-sky-700">Veritabanı & Veri</h4>
+                        <ul class="space-y-1 text-gray-600">
+                            <li>MS SQL</li>
+                            <li>Entity Framework</li>
+                            <li>Dapper & Redis</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                        <h4 class="font-bold text-lg mb-2 text-sky-700">Araçlar & Mimariler</h4>
+                        <ul class="space-y-1 text-gray-600">
+                            <li>RabbitMQ</li>
+                            <li>Docker & Git</li>
+                            <li>Mikroservis Mimarisi</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Education Section -->
+        <section id="egitim" class="text-center mb-20 md:mb-32">
+            <h2 class="text-3xl font-bold mb-8">Eğitim ve Kurslar</h2>
+            <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
+                    <p class="text-gray-500">2019</p>
+                    <h3 class="font-bold text-lg mt-1">Lisans, Maliye</h3>
+                    <p class="text-gray-600">Sakarya Üniversitesi, Siyasal Bilgiler Fakültesi</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
+                    <p class="text-gray-500">2017</p>
+                    <h3 class="font-bold text-lg mt-1">Önlisans, Bilgisayar Programcılığı</h3>
+                    <p class="text-gray-600">Sakarya Üniversitesi, Bilgisayar ve Teknoloji Yüksekokulu</p>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left md:col-span-2">
+                    <p class="text-gray-500">2014-2015</p>
+                    <h3 class="font-bold text-lg mt-1">C#, Webservisler.NET, Webform & MVC</h3>
+                    <p class="text-gray-600">Bilge Adam</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- References Section -->
+        <section id="referanslar" class="text-center">
+            <h2 class="text-3xl font-bold mb-8">Referanslar</h2>
+            <div class="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
+                    <h3 class="font-bold text-lg mt-1 text-sky-700">Ömer Balaban</h3>
+                    <p class="text-gray-600">Logo Yazılım</p>
+                    <p class="text-gray-500 mt-2">T: 05304108957</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
+                    <h3 class="font-bold text-lg mt-1 text-sky-700">Sefa Akdaş</h3>
+                    <p class="text-gray-600">Seyir Mobil A.Ş.</p>
+                    <p class="text-gray-500 mt-2">T: 05321791669</p>
+                    <p class="text-gray-500">E: malk@sefaakdas.com</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left">
+                    <h3 class="font-bold text-lg mt-1 text-sky-700">Ömer Ölmez</h3>
+                    <p class="text-gray-600">Logo Yazılım</p>
+                    <p class="text-gray-500 mt-2">T: 05549875307</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 Faruk Kaya. Tüm hakları saklıdır.</p>
+            <p class="text-gray-400 mt-2">Bu interaktif CV, yetenek ve deneyimleri sergilemek amacıyla oluşturulmuştur.</p>
+        </div>
+    </footer>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const experienceData = [
+            {
+                id: 'koton',
+                company: 'KOTON A.Ş.',
+                title: 'Kıdemli Yazılım Geliştirme Uzmanı',
+                period: 'Tem 2024 - Devam ediyor',
+                details: [
+                    'Mikroservis mimarisi kullanarak şirket içi lojistik ve tedarik zinciri süreçlerini optimize eden sistemlerin tasarım ve geliştirmesini üstlendim.',
+                    'Redis, Entity Framework Core ve Dapper ile yüksek performanslı veri erişim katmanları oluşturdum.',
+                    'WMS entegrasyonları aracılığıyla depo yönetimi süreçlerini destekleyen özel API\'ler ve entegrasyon projeleri geliştirdim.',
+                    'Veri modelleme ve DTO tasarımı konusunda uzmanlık sergileyerek, AutoMapper ile veri dönüşümlerini optimize ettim.',
+                    'Redis tabanlı önbellekleme stratejileri uygulayarak API performansını artırdım.',
+                    'E-ticaret ve ürün yönetimi entegrasyonları için ürün API\'leri ile entegrasyon ve veri modeli geliştirdim.'
+                ],
+                tech: ['C#', '.NET Core', 'Entity Framework Core', 'Dapper', 'MSSQL', 'Redis', 'RESTful API', 'AutoMapper', 'FluentValidation', 'Git', 'Docker', 'Swagger']
+            },
+            {
+                id: 'logo',
+                company: 'Logo Yazılım',
+                title: 'Kıdemli Yazılım Geliştirme Uzmanı',
+                period: 'Mar 2021 - Tem 2024',
+                details: [
+                    'E-fatura, e-arşiv ve e-irsaliye gibi dijital belge ve ödeme sistemleri entegrasyon projelerinde 3 yıllık kapsamlı deneyim kazandım.',
+                    '.NET 6, MsSql, RabbitMQ, Redis gibi çeşitli teknolojilerle finansal entegrasyon çözümleri geliştirdim.',
+                    'İki yıl süren portal yenileme sürecinde ReactJS kullanarak kullanıcı arayüzlerini modernize ettim ve ödeme süreçlerine yönelik kullanıcı deneyimini iyileştirdim.',
+                    'Dijital dönüşüm süreçlerinde aktif rol alarak ödeme ve faturalama sistemlerinin entegrasyonu ile satışların artırılmasına katkıda bulundum.'
+                ],
+                tech: ['.NET 6', 'React.js', 'MS SQL', 'RabbitMQ', 'Redis']
+            },
+            {
+                id: 'seyir',
+                company: 'Seyir Mobil Sistemler A.Ş.',
+                title: 'Yazılım Geliştirme Uzmanı',
+                period: 'Ağu 2018 - Mar 2021',
+                details: [
+                    'Şirketin iç ihtiyaçlarına yönelik, ölçeklenebilir bir CRM-ERP sistemi geliştirdim.',
+                    'Sistemde .NET Core API, .NET Core MVC, RabbitMQ, DevExtreme, jQuery, Dapper ve MSSQL (Stored Procedure, Trigger, Views) teknolojilerini kullandım.'
+                ],
+                tech: ['.NET Core API', '.NET Core MVC', 'RabbitMQ', 'DevExtreme', 'jQuery', 'Dapper', 'MS SQL']
+            },
+            {
+                id: 'okzasoft',
+                company: 'Okzasoft Bilişim',
+                title: 'Yazılım Geliştirme Uzmanı',
+                period: 'Tem 2016 - Tem 2018',
+                details: [
+                    'Full-Stack Developer olarak Plaka Tanıma Sistemi projesinde görev aldım.',
+                    'C#, ASP.NET MVC, JavaScript, jQuery, MSSQL (Stored Procedure) ve WPF teknolojilerini kullanarak hibrit bir uygulama geliştirdim.',
+                    'Sistem için kritik öneme sahip plaka okuma işlevini gerçekleştiren Windows Service\'i tasarladım ve kodladım.',
+                    'Okunan plakaların işlenmesi ve veritabanında saklanması için hem Web hem de Masaüstü Uygulamaları oluşturdum.'
+                ],
+                tech: ['C#', 'ASP.NET MVC', 'JavaScript', 'jQuery', 'MS SQL', 'WPF']
+            },
+            {
+                id: 'arvena',
+                company: 'Arvena Bilişim Ltd. Şti.',
+                title: 'Yazılım Geliştirme Uzmanı',
+                period: 'Şub 2016 - Haz 2016',
+                details: [
+                    'ASP.NET Yazılım Uzmanı olarak, Backend ve Frontend alanlarında kritik geliştirmeler gerçekleştirdim.',
+                    'CRM ve ERP sistemlerinin Winform ve Web versiyonlarını, Devexpress araçlarıyla yenilikçi çözümler sunarak geliştirdim.'
+                ],
+                tech: ['ASP.NET', 'WinForms', 'DevExpress']
+            },
+            {
+                id: 'sau',
+                company: 'Sakarya Üniversitesi',
+                title: 'Junior Yazılım Geliştirme Uzmanı',
+                period: 'Oca 2015 - Oca 2016',
+                details: [
+                    'Sakarya Üniversitesi Bilgi Sistemi (SABİS) yenileme projesinde ASP.NET MVC teknolojisi kullanarak aktif rol aldım.',
+                    'Projeye HTML, CSS, JavaScript, jQuery ve AngularJS yapılarına hakimiyetimle katkı sağladım.'
+                ],
+                tech: ['ASP.NET MVC', 'HTML', 'CSS', 'JavaScript', 'jQuery', 'AngularJS']
+            }
+        ];
+
+        const timelineNav = document.getElementById('timeline-nav');
+        const detailsContainer = document.getElementById('experience-details');
+        const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+        const summaryOutput = document.getElementById('summaryOutput');
+        const summaryLoading = document.getElementById('summaryLoading');
+        
+        let currentJobId = null;
+
+        experienceData.forEach((job, index) => {
+            const navItem = document.createElement('div');
+            navItem.className = 'timeline-item cursor-pointer';
+            navItem.dataset.id = job.id;
+            navItem.innerHTML = `
+                <h3 class="font-bold text-lg">${job.company}</h3>
+                <p class="text-gray-500 text-sm">${job.title}</p>
+                <p class="text-gray-400 text-xs mt-1">${job.period}</p>
+            `;
+            timelineNav.appendChild(navItem);
+        });
+        
+        function updateDetails(jobId) {
+            const job = experienceData.find(j => j.id === jobId);
+            if (!job) return;
+
+            currentJobId = jobId; // Set current job ID
+            summaryOutput.classList.add('hidden'); // Hide previous summary
+            summaryOutput.innerHTML = ''; // Clear previous summary
+            summaryLoading.classList.add('hidden'); // Hide loading
+
+            let detailsHtml = `
+                <h3 class="text-2xl font-bold text-gray-800">${job.title}</h3>
+                <p class="text-sky-600 font-semibold mb-1">${job.company}</p>
+                <p class="text-sm text-gray-500 mb-6">${job.period}</p>
+                <ul class="space-y-3 text-gray-600 list-disc pl-5">
+                    ${job.details.map(d => `<li>${d}</li>`).join('')}
+                </ul>
+                <div class="mt-8">
+                    <h4 class="font-semibold mb-3 text-gray-700">Kullanılan Teknolojiler:</h4>
+                    <div class="flex flex-wrap gap-2">
+                        ${job.tech.map(t => `<span class="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded-full">${t}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            detailsContainer.innerHTML = detailsHtml;
+            generateSummaryBtn.classList.remove('hidden'); // Show the button
+
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.id === jobId);
+            });
+        }
+
+        timelineNav.addEventListener('click', (e) => {
+            const targetItem = e.target.closest('.timeline-item');
+            if (targetItem) {
+                updateDetails(targetItem.dataset.id);
+            }
+        });
+
+        generateSummaryBtn.addEventListener('click', async () => {
+            const job = experienceData.find(j => j.id === currentJobId);
+            if (!job) return;
+
+            summaryOutput.classList.add('hidden');
+            summaryLoading.classList.remove('hidden');
+
+            const prompt = `Sen bir işe alım uzmanısın. Aşağıdaki iş deneyimi bilgilerini, bir iş başvurusunda kullanılabilecek 3-4 cümlelik, vurgulu ve etkileyici bir özet haline getir. Sorumlulukları ve kullanılan teknolojileri öne çıkar.
+
+Şirket: ${job.company}
+Pozisyon: ${job.title}
+Dönem: ${job.period}
+Detaylar:
+${job.details.join('\n')}
+Kullanılan Teknolojiler:
+${job.tech.join(', ')}`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    summaryOutput.innerHTML = text;
+                    summaryOutput.classList.remove('hidden');
+                } else {
+                    summaryOutput.innerHTML = 'Özet oluşturulamadı. Lütfen tekrar deneyin.';
+                    summaryOutput.classList.remove('hidden');
+                }
+            } catch (error) {
+                summaryOutput.innerHTML = 'Bir hata oluştu: ' + error.message;
+                summaryOutput.classList.remove('hidden');
+            } finally {
+                summaryLoading.classList.add('hidden');
+            }
+        });
+        
+        // Initial load
+        if (experienceData.length > 0) {
+            updateDetails(experienceData[0].id);
+        }
+
+        // Chart.js initialization
+        const ctx = document.getElementById('skillsChart').getContext('2d');
+        const skillsChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Backend', 'Frontend', 'Veritabanı & Veri', 'Araçlar & Mimariler'],
+                datasets: [{
+                    label: 'Teknoloji Dağılımı',
+                    data: [25, 25, 20, 30], // Approximate distribution based on CV
+                    backgroundColor: [
+                        'rgba(14, 165, 233, 0.7)',  // sky-500
+                        'rgba(59, 130, 246, 0.7)',  // blue-500
+                        'rgba(34, 197, 94, 0.7)',   // green-500
+                        'rgba(107, 114, 128, 0.7)' // gray-500
+                    ],
+                    borderColor: [
+                        'rgba(14, 165, 233, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(34, 197, 94, 1)',
+                        'rgba(107, 114, 128, 1)'
+                    ],
+                    borderWidth: 1,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    });
+    </script>
+
+</body>
+</html>
