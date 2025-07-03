@@ -102,11 +102,11 @@
         <section class="text-center mb-20 md:mb-32">
             <h1 class="text-4xl md:text-6xl font-extrabold text-gray-800 leading-tight">Faruk Kaya</h1>
             <p class="text-xl md:text-2xl text-sky-600 font-medium mt-4">.NET & React Developer</p>
-            <div class="mt-8 flex justify-center items-center space-x-4 text-gray-500">
+            <div class="mt-8 flex flex-col md:flex-row justify-center items-center md:space-x-4 space-y-2 md:space-y-0 text-gray-500">
                 <span>+90 (531) 854 02 20</span>
-                <span class="text-gray-300">|</span>
+                <span class="text-gray-300 hidden md:inline">|</span>
                 <span>farukkaya03@hotmail.com.tr</span>
-                <span class="text-300">|</span>
+                <span class="text-gray-300 hidden md:inline">|</span>
                 <span>Pendik, İstanbul</span>
             </div>
         </section>
@@ -320,8 +320,6 @@
 
         const timelineNav = document.getElementById('timeline-nav');
         const detailsContainer = document.getElementById('experience-details');
-        
-        // Removed generateSummaryBtn, summaryOutput, summaryLoading elements and related JS logic
         
         let currentJobId = null;
 
